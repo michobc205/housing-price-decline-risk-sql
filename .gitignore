@@ -216,3 +216,9 @@ __marimo__/
 
 # Streamlit
 .streamlit/secrets.toml
+
+# Raw and processed data - kept outside git
+data/
+
+# Raw and processed data - kept outside git
+data/
