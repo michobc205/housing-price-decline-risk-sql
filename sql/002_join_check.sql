@@ -1,16 +1,21 @@
 -- 002_join_check.sql
 --
--- Joins zhvi_monthly (county-month) with mortgage_monthly (national-month) on
--- month. Zillow is the spine (LEFT JOIN): a month missing from mortgage_monthly
--- should surface as a NULL mortgage_rate, never as a silently dropped
--- county-month row. This mirrors the join logic used in the pandas pipeline
--- (zillow_slim.merge(fred_slim, on="month", how="left")), just expressed in SQL
--- instead of pandas.
+-- Joins zhvi_monthly (county by month) with mortgage_monthly (national, by month).
+-- Zillow is the spine (LEFT JOIN), so a month missing from mortgage_monthly shows up
+-- as an empty mortgage_rate and never as a silently dropped county-month row.
 --
--- Run this directly in DBeaver against capstone_sql_variant, or via the
--- notebook's exec_driver_sql call in 01_phase1_ingest_sql.ipynb.
+-- Plain equality join. Both tables store month-END dates: Zillow publishes month-end
+-- column headers, and the FRED resample is aligned to month-end as well, so no date
+-- truncation is needed. An earlier version stored Zillow months at month-start and had
+-- to truncate both sides to make them match. Raw SQL date joins fail silently when the
+-- two conventions differ: zero matches and no error message.
+--
+-- Safe to re-run. The table is dropped and rebuilt, because CREATE TABLE AS has no
+-- OR REPLACE form and would otherwise fail on a second run or keep stale rows.
 
-CREATE TABLE IF NOT EXISTS county_month_joined AS
+DROP TABLE IF EXISTS county_month_joined;
+
+CREATE TABLE county_month_joined AS
 SELECT
     z.county_fips,
     z.month,
@@ -20,14 +25,4 @@ SELECT
     m.mortgage_rate
 FROM zhvi_monthly AS z
 LEFT JOIN mortgage_monthly AS m
-    ON date_trunc('month', m.month) = date_trunc('month', z.month);
-
--- Re-running this file re-creates the table from scratch rather than silently
--- accumulating duplicate rows on each run (the exact bug that produced the
--- 708,953-vs-709,996 mismatch in the other repo). CREATE TABLE ... AS fails if
--- the table already exists, so drop it first for idempotent re-runs:
---
---   DROP TABLE IF EXISTS county_month_joined;
---
--- (kept as a separate manual step rather than baked into this file, so a
--- careless re-run can't silently wipe a table you meant to keep)
+    ON m.month = z.month;
