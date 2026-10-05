@@ -18,7 +18,8 @@ pandas build of the same pipeline.
 |---|---|---|
 | 1 | Ingest, month-end join, coverage audit | Done and verified |
 | 2 | Split in time and 11 validation folds, generated in SQL | Done and verified |
-| 3 | Exploratory analysis: lag sweep, quarter-level re-test | SQL done and verified, notebook being updated |
+| 3 | Exploratory analysis: lag sweep, quarter-level re-test, rate definition | Done and verified |
+| 3b | Reverse-causation check with a block bootstrap | Done and verified |
 | 4 | Modeling table with six features | SQL done and verified, notebook being updated |
 | 5 | Modeling on the validation folds | In progress |
 | 6 | Evaluation on the test period | In progress |
@@ -50,6 +51,7 @@ sources have their own terms of use. The weekly rate is averaged to one value pe
 | Modeling table, Train | 164,460 rows, 3,009 counties, 4.85% declines |
 | Validation folds | 11 expanding-window folds, validation years 2010 to 2020 |
 | Rate change vs decline, 12-month lag, quarter level | r = -0.145 on 82 quarters, 95% interval -0.351 to +0.074 (it includes zero) |
+| Does price momentum lead rate changes? | At most weak evidence. With rate data only through Train, the correlation is about 0.12 at leads of 4 and 14 months (12-month block-bootstrap 95% intervals 0.005 to 0.222 and 0.009 to 0.236). It is 0.26 at 14 months when rate data after Train are included, and the difference comes from the latest 14 months. |
 
 The label counts are computed twice, in pandas (notebook 01, Section 8) and in SQL
 (`sql/006_checks.sql`, check 6a), and the two agree exactly. An independent pandas
@@ -64,6 +66,7 @@ sql/002      join in SQL               -> county_month_joined
 sql/003      split in time             -> monthly_split (+ train, embargo, test views)
 sql/003b     validation folds          -> cv_folds
 sql/004      label + lag analysis      -> train_quarterly_labeled, lag_correlation_*
+sql/004b     reverse causation         -> national_momentum, reverse_causation_*
 sql/005      features                  -> quarterly_modeling_table
 sql/005b     fold membership           -> cv_fold_rows
 sql/006      checks                    -> 5 hard checks and soft figures
@@ -123,6 +126,7 @@ feature in the modeling table.
   of them were declines against 4.9% overall. Requiring both quarter-end months removes them.
 - **A change that spanned six months.** After a fully empty quarter, the next quarter's change
   covered six months. 91 counties have such a quarter.
+- **A claim that was reasoned and not measured.** Intervals that assume independent months were first described as too narrow. A block bootstrap showed they are of similar width, so the conclusion on reverse causation is worded as "at most weak evidence" and not as "no evidence".
 - **A script splitter broken by prose.** Splitting a SQL file on `;` breaks on semicolons
   inside comments and `DO` blocks. The notebooks now send each file to the database whole.
 
@@ -140,7 +144,7 @@ feature in the modeling table.
 ## Repository layout
 
 ```
-sql/                   001 to 006, each safe to re-run
+sql/                   001 to 006 plus 003b, 004b and 005b, each safe to re-run
 notebooks/             01 ingest, 02 split and folds, 03 to 06 analysis and modeling
 outputs/               figures
 .env.example           the database settings to copy into .env
@@ -171,7 +175,7 @@ Run `notebooks/01_phase1_ingest_sql.ipynb` first. It downloads the data, loads i
 the join. Then run the remaining SQL files in order, from the repo root:
 
 ```bash
-for f in 003_phase2_split 003b_cv_folds 004_phase3_eda 005_phase4_features 005b_cv_fold_rows 006_checks; do
+for f in 003_phase2_split 003b_cv_folds 004_phase3_eda 004b_reverse_causation 005_phase4_features 005b_cv_fold_rows 006_checks; do
   psql -v ON_ERROR_STOP=1 -U postgres -d housing_risk_sql -f sql/$f.sql
 done
 ```
