@@ -20,7 +20,7 @@ pandas build of the same pipeline.
 | 2 | Split in time and 11 validation folds, generated in SQL | Done and verified |
 | 3 | Exploratory analysis: lag sweep, quarter-level re-test, rate definition | Done and verified |
 | 3b | Reverse-causation check with a block bootstrap | Done and verified |
-| 4 | Modeling table with six features | SQL done and verified, notebook being updated |
+| 4 | Modeling table with six features | Done and verified |
 | 5 | Modeling on the validation folds | In progress |
 | 6 | Evaluation on the test period | In progress |
 | 7 | Dashboard | In progress |
