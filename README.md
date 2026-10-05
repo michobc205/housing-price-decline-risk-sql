@@ -181,4 +181,5 @@ after every run of `005`, because rebuilding the modeling table drops the fold v
 
 ## License
 
-See the `LICENSE` file once it is added.
+MIT. See the [LICENSE](LICENSE) file. The data files are not covered by it: Zillow and FRED
+have their own terms of use.
