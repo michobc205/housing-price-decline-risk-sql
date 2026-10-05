@@ -222,3 +222,8 @@ data/
 
 # Raw and processed data - kept outside git
 data/
+.venv/
+.env
+data/
+__pycache__/
+.ipynb_checkpoints/
