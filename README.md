@@ -23,10 +23,11 @@ pandas build of the same pipeline.
 | 4 | Modeling table with six features | Done and verified |
 | 5 | Modeling on the validation folds: 3 families, 3 feature steps, quarter bootstrap | Done and verified |
 | 6 | Evaluation on the test period: nine frozen models scored once, decision rules, calibration, stability | Done and verified |
-| 7 | Dashboard | In progress |
+| 7 | Dashboard: five pages on the phase 5 and 6 tables, with a CSV snapshot of the summary results | Done and verified |
 
-Phases 5 and 6 were run on the corrected pipeline below. Phase 5 never reads the test period,
-and phase 6 scores it once with frozen models. Phase 7 is added after it is rebuilt the same way.
+Phases 5 to 7 were run on the corrected pipeline below. Phase 5 never reads the test period,
+phase 6 scores it once with frozen models, and phase 7 (the dashboard) only reads the result tables
+of phases 5 and 6 and does no modeling of its own.
 
 ## The data
 
@@ -671,6 +672,76 @@ on Test.
 | Random forest | 24.7 | 32.4 | 26.9 |
 | Histogram gradient boosting | 2.4 | 2.5 | 1.9 |
 
+## Phase 7: the dashboard
+
+`notebooks/07_phase7_dashboard_sql.py` is a Streamlit dashboard with five pages. It does **no
+modeling**: it only reads the tables written by notebooks 04 to 06, so every number on a page
+traces back to a verified table. It reads Postgres first, and if the database cannot be reached it
+reads a small CSV snapshot of the summary tables in `outputs/dashboard_data/`, so anyone who clones
+the repository can run it without a database.
+
+```bash
+python notebooks/07b_export_dashboard_data.py          # after notebooks 04 to 06
+streamlit run notebooks/07_phase7_dashboard_sql.py
+```
+
+| Page | What it shows |
+|---|---|
+| 1. The answer | A headline built from the tables, four numbers for the recommended model (Test ROC-AUC 0.8857 with its interval, PR-AUC 0.4665 against the 8.11% base rate, 48.6% of declines found in the riskiest 10% each quarter, lift 4.9x), and a chart of the change in ROC-AUC when the rate is added, for validation and Test, with the +0.01 line |
+| 2. Data and folds | The modeling table by period, the decline share and the mortgage rate over time, the 11 validation folds and their decline rates, and the share of validation rows outside the training range of the rate features |
+| 3. Models on validation | The nine-model summary, a fold-by-fold chart (ROC-AUC or PR-AUC, with the base rate as a dotted line, one feature step or all) and the validation bootstrap table |
+| 4. Test and decision rules | Test scores with intervals, a picker for the four fixed decision rules and for the model with validation and Test side by side (flagged share, precision, recall, lift and the 2x2 counts), calibration, ROC-AUC per Test quarter for any model, and the Test range check |
+| 5. Limits and method | How the results were made, an integrity check of the dashboard against the three lock files, and the limits |
+
+Design choices:
+
+- **The reader cannot tune on Test.** The decision page offers the four fixed rules of phase 6 (top
+  5%, 10% and 20% each quarter, and the F1 threshold from validation), not a free slider, and always
+  shows validation next to Test.
+- **Numbers are read from the tables, not typed into the text.** Where a sentence quotes a number
+  (for example the fold with the fewest declines), it is computed from the table.
+- **Integrity check on page 5.** The Test scores, the F1 thresholds and the baseline validation
+  scores shown by the dashboard are compared with `phase6_test_lock.json`,
+  `phase6_thresholds_lock.json` and `phase5_baseline_lock.json`. On the real data all three gaps
+  are exactly 0, and a changed lock file turns the line red.
+- **Per-table fallback.** Each table is read from Postgres if it can be, and from its CSV otherwise.
+  The sidebar says how many tables came from each, and the snapshot date when it is used. The cache
+  refreshes every 5 minutes, so re-running a notebook does not need a restart.
+
+### The snapshot
+
+`notebooks/07b_export_dashboard_data.py` builds five small overview tables in Postgres (`dash_*`)
+and writes 18 tables to `outputs/dashboard_data/` (62 KB in total), plus `snapshot_info.json`:
+
+| Table | Rows | Content |
+|---|---|---|
+| `phase5_fold_scores`, `phase5_step_summary`, `phase5_bootstrap_deltas` | 99, 9, 9 | Phase 5 results |
+| `phase6_test_scores`, `phase6_test_deltas`, `phase6_family_deltas`, `phase6_thresholds` | 9 each | Phase 6 scores, bootstrap and thresholds |
+| `phase6_decision_rules`, `phase6_calibration`, `phase6_calibration_all`, `phase6_per_quarter` | 72, 20, 9, 153 | Decision rules, calibration, quarterly scores |
+| `phase6_range_check`, `phase6_eval_summary` | 2, 12 | Range check and key facts |
+| `dash_split_summary`, `dash_quarterly_rate`, `dash_fold_overview`, `dash_fold_range_check`, `dash_test_range_by_quarter` | 4, 101, 11, 11, 17 | Overview tables built from the modeling table and the fold view |
+
+Only aggregated results are exported. The script stops if any table holds a county-level column or
+thousands of rows, so no Zillow data can reach the repository. Re-run it after re-running notebooks
+04 to 06, otherwise the snapshot is out of date (the dashboard always prefers the database).
+
+### How the phase was checked
+
+- Before the real run, every page and control was run headlessly on a snapshot built from the
+  verified results: the rule picker, the model selectors and the fold controls. A changed lock file
+  gave a red line, a missing lock file gave a note, and a missing table gave a clear stop message
+  with instructions. The export script was run on a stand-in database, and its five overview tables
+  matched independent pandas calculations.
+- On the real data, the export printed 18 tables (62 KB) and no county-level rows. Each of the five
+  pages was compared with the verified numbers of notebooks 04 to 06 (the headline counts of 7
+  comparisons that lower the score, the four headline numbers, the fold table, the Test scores, all
+  eight rows of the decision-rule table, the calibration tables, the quarterly table, the range
+  table and the three integrity lines).
+- Reviewing the real pages led to small fixes: grey up-arrows removed from the headline numbers (they
+  read as "increase"), an ambiguous axis label, every year shown on the fold charts, readable
+  column names, bars on a cut axis replaced by dots with intervals, a logical order for the rules,
+  and quarter labels and a zero-based right axis on the quarterly chart.
+
 ## How the pipeline works
 
 ```
@@ -686,6 +757,8 @@ sql/006      checks                    -> 5 hard checks and soft figures
 notebook 04  features, checked in pandas -> quarterly_modeling_table, cv_fold_rows verified
 notebook 05  modeling on the folds     -> phase5_* tables, outputs/phase5_baseline_lock.json
 notebook 06  Test scored once          -> phase6_* tables, outputs/phase6_*_lock.json
+notebook 07b overview tables + snapshot -> dash_* tables, outputs/dashboard_data/*.csv
+notebook 07  dashboard (Streamlit)     -> reads the tables above, or the CSV snapshot
 ```
 
 Three rules shape everything downstream:
@@ -756,6 +829,13 @@ feature in the modeling table.
 - **A probability cut-off that does not carry over.** The F1 threshold fixed on validation flags
   4.6% of validation counties but 6.3% of Test counties, because the models carry over the decline
   rate of their training years. Rank-based rules flag the intended share.
+- **A dashboard nobody else could run.** The first dashboard needed the live database and read
+  tables of an earlier version. The new one falls back to a CSV snapshot of the summary results,
+  with a guard that stops the export if any county-level column slips in.
+- **A chart that exaggerated differences.** Bars drawn on an axis that starts at 0.75 made small
+  differences between models look large. Dots with their intervals show the same numbers honestly.
+- **Numbers typed into the text.** A sentence such as "the 2020 fold has 71 declines" goes stale
+  when the data change. The dashboard computes such facts from its tables.
 - **A script splitter broken by prose.** Splitting a SQL file on `;` breaks on semicolons
   inside comments and `DO` blocks. The notebooks now send each file to the database whole.
 
@@ -788,15 +868,20 @@ feature in the modeling table.
   forest remains the recommended model because it was chosen on validation.
 - Fold 0 of phase 5 trains on 35 quarters in practice, not the nominal 40 (the first Train label
   is the quarter ending 2001-06-30).
+- The dashboard shows aggregated results only. It has no county-level view, because county-level
+  rows come from Zillow data that is not part of the repository.
+- When it runs from the CSV snapshot, the dashboard shows the results of the day the snapshot was
+  made (the sidebar says so).
 
 ## Repository layout
 
 ```
 sql/                   001 to 006 plus 003b, 004b and 005b, each safe to re-run
 notebooks/             01 ingest, 02 split and folds, 03 and 03b analysis, 04 features, 05 modeling,
-                       06 evaluation (07, the dashboard, is being rebuilt)
+                       06 evaluation, 07 dashboard (07b exports the data it needs)
 outputs/               figures, feature summary, phase5_baseline_lock.json,
-                       phase6_thresholds_lock.json, phase6_test_lock.json
+                       phase6_thresholds_lock.json, phase6_test_lock.json,
+                       dashboard_data/ (CSV snapshot of the summary tables)
 .env.example           the database settings to copy into .env
 requirements.txt       Python packages
 ```
@@ -836,7 +921,10 @@ after every run of `005`, because rebuilding the modeling table drops the fold v
 Then run `notebooks/04_phase4_features_sql.ipynb` (it re-runs `005` and `005b` and checks the
 result against an independent pandas recomputation), `notebooks/05_phase5_modeling_sql.ipynb`
 (about 7 minutes of fitting plus 1 minute of bootstrap) and `notebooks/06_phase6_evaluation_sql.ipynb`
-(about 3 minutes; it scores the test period once and writes two lock files).
+(about 3 minutes; it scores the test period once and writes two lock files). To look at the results,
+run `python notebooks/07b_export_dashboard_data.py` and then
+`streamlit run notebooks/07_phase7_dashboard_sql.py`. Without a database, skip the export: the
+dashboard reads the CSV snapshot that is already in `outputs/dashboard_data/`.
 
 ## License
 
