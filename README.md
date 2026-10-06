@@ -8,9 +8,9 @@ splitting in time, building the validation folds, labelling, feature engineering
 data checks all run inside PostgreSQL. Python is used only to download the data, to fit the
 models and to draw the plots.
 
-It is one half of a two-person capstone. The [team repository](https://github.com/michobc205/capstone-housing-risk-team)
-holds the merged pipeline, where this SQL build was compared row by row with an independent
-pandas build of the same pipeline.
+This is the SQL-first part of a two-person capstone, built and verified on its own. The
+[team repository](https://github.com/michobc205/capstone-housing-risk-team) holds the team's
+merged pipeline.
 
 ## Status
 
@@ -56,9 +56,7 @@ sources have their own terms of use. The weekly rate is averaged to one value pe
 | Does price momentum lead rate changes? | At most weak evidence. With rate data only through Train, the correlation is about 0.12 at leads of 4 and 14 months (12-month block-bootstrap 95% intervals 0.005 to 0.222 and 0.009 to 0.236). It is 0.26 at 14 months when rate data after Train are included, and the difference comes from the latest 14 months. |
 
 The label counts are computed twice, in pandas (notebook 01, Section 8) and in SQL
-(`sql/006_checks.sql`, check 6a), and the two agree exactly. An independent pandas
-implementation of the same pipeline in the team repository produces the same 164,460
-Train rows, with identical features and labels.
+(`sql/006_checks.sql`, check 6a), and the two agree exactly.
 
 ## Phase 5: modeling on the validation folds
 
@@ -811,8 +809,9 @@ feature in the modeling table.
   picked an empty month, and its label silently became 0.
 - **Labels that spanned more than a quarter.** Taking "the last month with a value" fixed the
   first problem but let a label span two, or four to five, months when a quarter-end month
-  was empty. In a row-by-row comparison, 448 modeling rows were built that way, and about 25%
-  of them were declines against 4.9% overall. Requiring both quarter-end months removes them.
+  was empty. An independent recomputation of the modeling table found 448 rows built that way,
+  and about 25% of them were declines against 4.9% overall. Requiring both quarter-end months
+  removes them.
 - **A change that spanned six months.** After a fully empty quarter, the next quarter's change
   covered six months. 91 counties have such a quarter.
 - **A claim that was reasoned and not measured.** Intervals that assume independent months were first described as too narrow. A block bootstrap showed they are of similar width, so the conclusion on reverse causation is worded as "at most weak evidence" and not as "no evidence".
