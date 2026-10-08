@@ -123,7 +123,7 @@ END $$;
 -- 6. Soft checks: figures to compare with the README ----------------------------------------
 -- 6a. Decline labels per window, computed in SQL. They must equal the figures printed by
 -- Section 8 of notebook 01, which computes the same thing in pandas. With the Zillow file
--- of October 2026: Full history 231,453 rows / 5.55 percent, Train 173,277 / 4.88,
+-- downloaded on 2026-09-23: Full history 231,453 rows / 5.55 percent, Train 173,277 / 4.88,
 -- Embargo 3,020 / 0.96, Test 52,085 / 8.15. Full history also holds the 3,071 rows of
 -- 2026-Q2, which belong to no split.
 SELECT 'Full history' AS window, COUNT(*) AS n_rows,
@@ -141,7 +141,7 @@ FROM quarterly_labeled_full WHERE split = 'test';
 
 -- 6b. The modeling table, which drops each county's earliest quarters (no 6-month momentum
 -- or 12-month rate history yet) and any row with a missing feature.
--- Expected with the Zillow file of October 2026 (they drift slightly as new months arrive):
+-- Expected with the Zillow file downloaded on 2026-09-23 (they drift slightly as new months arrive):
 --   Train 164,460 rows / 4.85 percent, Embargo 3,020 / 0.96, Test 51,980 / 8.11, Unassigned 3,070 / 4.27
 SELECT split, COUNT(*) AS n_rows, COUNT(DISTINCT county_fips) AS n_counties,
        ROUND(100.0 * AVG(decline_label), 2) AS positive_rate_pct

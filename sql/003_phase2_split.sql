@@ -32,7 +32,7 @@ CREATE VIEW train_monthly   AS SELECT * FROM monthly_split WHERE split = 'train'
 CREATE VIEW embargo_monthly AS SELECT * FROM monthly_split WHERE split = 'embargo';
 CREATE VIEW test_monthly    AS SELECT * FROM monthly_split WHERE split = 'test';
 
--- Monthly row counts per split. With the Zillow file of October 2026 the expected
+-- Monthly row counts per split. With the Zillow file downloaded on 2026-09-23 the expected
 -- figures are Train 529,214 / Embargo 9,063 / Test 156,364 / Unassigned 15,355
 -- (709,996 in total, including the empty internal-gap months).
 SELECT split, COUNT(*) AS n_rows
