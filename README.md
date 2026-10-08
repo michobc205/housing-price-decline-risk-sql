@@ -3,10 +3,10 @@
 Which US counties will see their home values fall by more than 2% in the next quarter, and
 how much do mortgage rates add once a county's own price momentum is already known?
 
-This project answers that question with a pipeline that runs **in SQL**. Loading, joining,
-splitting in time, building the validation folds, labelling, feature engineering and the
-data checks all run inside PostgreSQL. Python is used only to download the data, to fit the
-models and to draw the plots.
+This project answers that question with a pipeline that runs **in SQL**. Joining, splitting
+in time, building the validation folds, labelling, feature engineering and the data checks
+all run inside PostgreSQL. Python downloads and cleans the two raw files before they are
+loaded, fits the models and draws the plots.
 
 This is the SQL-first part of a two-person capstone, built and verified on its own. The
 [team repository](https://github.com/michobc205/capstone-housing-risk-team) holds the team's

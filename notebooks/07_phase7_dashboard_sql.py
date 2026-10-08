@@ -519,8 +519,8 @@ else:
     st.title("Limits and method")
     st.subheader("How the results were made")
     st.markdown(
-        "- **Everything runs in SQL up to the modeling table.** Loading, joining, the time split, the validation folds, "
-        "the labels and the features are built in PostgreSQL and checked by a second implementation in pandas.\n"
+        "- **The main transformations run in SQL.** The join, the time split, the validation folds, the labels and "
+        "the features are built in PostgreSQL and checked by a second implementation in pandas.\n"
         "- **Models were chosen on validation only.** Three families, three feature steps, fixed settings. The baseline "
         "was locked before any rate feature was fitted.\n"
         "- **Test was scored once with frozen models.** The decision cut-off was found on validation and written to a "
