@@ -363,9 +363,9 @@ Compared with the validation folds of phase 5 (point changes and verdicts):
   to +0.0066).
 - Adding the rate level lowers ROC-AUC for both tree families on Test as well. The random forest
   drop is now clearly below zero (interval ends at -0.0044, against -0.0002 on validation).
-- Logistic regression is flat when the rate level is added. For the second step its Test interval
-  is wide (up to +0.0188), so on Test alone it cannot rule out a gain of +0.01, which validation
-  could.
+- Logistic regression is flat when the rate level is added (upper end +0.0035). When the rate
+  change is added on top of the rate level, its Test interval is wide (up to +0.0188), so on Test
+  alone it cannot rule out a gain of +0.01, which validation could.
 
 ### The families against each other on Test
 
@@ -413,8 +413,9 @@ the base rate. Recommended model, validation against Test:
   the fair comparison: 6.0, 4.9 and 3.5 on Test against 7.8, 5.5 and 3.6 on validation. Recall is
   lower on Test for the same reason.
 - The F1 threshold (0.3386, fixed on validation) flags 6.3% of Test counties against 4.6% on
-  validation. A probability cut-off does not carry over when the base rate moves, while the
-  top-X% rules always flag the intended share.
+  validation. Its lift falls from 10.7 on validation to 6.9 on Test, with precision rising from
+  0.40 to 0.56 and recall falling from 0.49 to 0.43. A probability cut-off does not carry over
+  when the base rate moves, while the top-X% rules always flag the intended share.
 
 The three families at baseline on Test (precision / recall / share flagged):
 
@@ -450,11 +451,15 @@ against the share that actually declined):
 - Average predicted against actual: **6.91% against 8.11% on Test**, and 5.39% against 3.77% on
   validation. Brier scores: 0.0549 on Test and 0.0297 on validation.
 - On Test the model under-predicts in all 10 deciles (for example 1.3% predicted against 2.9%
-  actual in decile 6). On validation it over-predicts in the upper deciles, mostly the top one
-  (38.1% against 25.5%).
+  actual in decile 6). The gap is smallest in the riskiest tenth (46.1% predicted against 47.6%
+  actual) and largest in deciles 5 to 8, where the risk is understated by a factor of about 1.5
+  to 3. On validation it over-predicts in the upper deciles, mostly the top one (38.1% against
+  25.5%).
 - A probable reason, not tested separately: the models carry over the decline rate of the years
   they were trained on. In 9 of the 11 folds the validation year had a lower rate than its
-  training years, and Test has a higher rate than Train (8.11% against 4.85%).
+  training years (see the fold table in section 2 of the phase 5 notebook: training rows and
+  declines against the validation rate), and Test has a higher rate than Train (8.11% against
+  4.85%).
 - So the ranking is useful, but a predicted probability is not a stable estimate of the share
   that will decline. No recalibration is applied: one fitted on validation would lower the
   probabilities, which is the wrong direction for Test.
@@ -505,9 +510,9 @@ Recommended model. "Top 10% recall" is the share of that quarter's declines amon
 | 2026-Q1 | 3,070 | 33 | 1.07% | 0.9637 | 0.2929 | 0.909 | 0.098 |
 
 - Quarterly ROC-AUC runs from 0.7555 (2022-Q1, only 39 declines) to 0.9637 (2026-Q1, 33
-  declines), with a median of 0.9015. Twelve of 17 quarters are at or above 0.85. The five below
-  are 2022-Q1, 2022-Q3, 2023-Q1, 2023-Q2 and 2025-Q2. From 2023-Q4 on, every quarter except
-  2025-Q2 is above 0.89.
+  declines), with a median of 0.9015. Twelve of 17 quarters are at or above 0.85. Four of the
+  five quarters below 0.85 are in 2022-23 (2022-Q1, 2022-Q3, 2023-Q1 and 2023-Q2); the fifth is
+  2025-Q2. From 2023-Q4 on, every quarter except 2025-Q2 is above 0.89.
 - Quarters with few declines are noisy: 2024-Q2 has only 10.
 - Recall at the top 10% depends on how many counties decline. In 2022-Q4 and 2023-Q1 (22% to 23%
   declines) a 10% list can catch at most about 43% to 46% of them, and it catches 35%, with 82%
@@ -562,7 +567,8 @@ Tree models cannot predict beyond the values they saw in Train.
 | `rate_roc_12m` | -1.420 to 1.112 | -1.020 to 3.266 | 29.4% |
 
 The 12-month rate change is outside the Train range for every county in the five quarters from
-2022-Q3 to 2023-Q3 (the core of the hiking cycle), and the rate level only in 2023-Q4:
+2022-Q3 to 2023-Q3 (the core of the hiking cycle; it reaches +3.27 against at most +1.11 in Train),
+and the rate level only in 2023-Q4 and only slightly (7.20 against a Train maximum of 7.16):
 
 | Quarter | Rate level outside | Rate change outside |
 |---|---|---|

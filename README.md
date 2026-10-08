@@ -24,7 +24,7 @@ merged pipeline.
 - **It works as a ranking, not as a probability.** Flagging the riskiest 10% of counties each
   quarter finds 48.6% of the declines, 4.9 times better than chance. The predicted probabilities
   are too low on Test and too high on validation.
-- **The Test period was kept out of every choice.** Everything was chosen on the validation
+- **No choice was made from the Test results.** Everything was chosen on the validation
   folds, Test was scored once with frozen models, and the baseline, the decision threshold and
   the Test scores are locked in files committed to git.
 
@@ -59,6 +59,19 @@ of phases 5 and 6 and does no modeling of its own.
 The data files are **not** included in this repository. The notebook downloads them, and both
 sources have their own terms of use. The weekly rate is averaged to one value per month
 (`.mean()`), dated at month-end like Zillow's columns.
+
+### Data version
+
+Every result in this repository comes from these two raw files. They are not part of the
+repository, and the hash is the proof of the version.
+
+| File | SHA-256 | Size | Downloaded |
+|---|---|---|---|
+| `data/raw/zillow/zhvi_county.csv` | `334e267a88028068d8c485363bf367a613c24a32dba3b1e288754e9728933867` | 13,579,570 bytes | 2026-09-23 |
+| `data/raw/fred/mortgage30us.csv` | `11e81dbde55fab4f29cbe2e4604df594f05f655cf6f5196a3264db5b6c38c385` | 46,915 bytes | 2026-09-23 |
+
+Zillow re-estimates and republishes its whole history every month, so a new download is a
+different version and gives slightly different figures.
 
 ## Verified results so far
 
@@ -237,8 +250,8 @@ feature in the modeling table.
   frozen models. An earlier version of this project compared models on the test period directly.
   That is not repeated here. The test period was also scored in earlier versions of this project,
   and those results are retired.
-- The validation years (2010 to 2020) do not include the 2022-23 rate-hiking cycle, which is
-  in the test period, so the rate result in this README is about the validation years only.
+- The validation years (2010 to 2020) do not include the 2022-23 rate-hiking cycle. That
+  cycle is in the test period, where the rate also adds nothing robust.
 - Model settings were fixed and not tuned, so a tuned model could use the rate differently.
 - The rate is one national number per quarter, so the evidence about it rests on 44 validation
   quarters and not on 112,734 rows. The random forest result at the first rate step is only just
@@ -246,7 +259,8 @@ feature in the modeling table.
 - Fold 10 (2020) has 71 declines, so its scores are noisy and the choice between random
   forest and gradient boosting depends on whether it is included.
 - The test period has 17 quarters, so its intervals are wide. On Test alone, even logistic
-  regression cannot rule out a gain of +0.01 from the rate change at the second step.
+  regression cannot rule out a gain of +0.01 when the rate change is added on top of the rate
+  level (upper end +0.0188; for the rate level alone +0.0035).
 - The test period contains one rate-hiking cycle (2022-23). The result about the rate is about
   that cycle and the years after it, not about rate cycles in general.
 - Predicted probabilities are not calibrated across periods (too low on Test, too high on
