@@ -1,5 +1,5 @@
 {
-  "purpose": "Test scores of the nine frozen models, written the first time Test was scored.",
+  "purpose": "Test scores of the nine frozen models. A re-run must reproduce them.",
   "train_rows": 164460,
   "test_rows": 51980,
   "test_declines": 4214,
