@@ -328,6 +328,11 @@ run `python notebooks/07b_export_dashboard_data.py` and then
 `streamlit run notebooks/07_phase7_dashboard_sql.py`. Without a database, skip the export: the
 dashboard reads the CSV snapshot that is already in `outputs/dashboard_data/`.
 
+## Author
+
+Michel Mghames (GitHub: [michobc205](https://github.com/michobc205)).
+This repository is my SQL-first study for the data science bootcamp capstone: the pipeline, the analysis, the models, the checks and the dashboard.
+
 ## License
 
 MIT. See the [LICENSE](LICENSE) file. The data files are not covered by it: Zillow and FRED

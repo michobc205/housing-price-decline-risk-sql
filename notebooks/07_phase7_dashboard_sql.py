@@ -525,6 +525,7 @@ else:
         "was locked before any rate feature was fitted.\n"
         "- **Test was scored once with frozen models.** The decision cut-off was found on validation and written to a "
         "file before Test was scored, and the Test scores were locked in a second file.\n"
+        "- **The test period was also scored in earlier versions of this project,** and nothing was chosen from its results.\n"
         "- **Uncertainty comes from resampling whole quarters,** because counties in one quarter share the same rate "
         "environment.")
 
